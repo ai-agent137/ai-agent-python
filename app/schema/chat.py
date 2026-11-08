@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import List, Any
 
     
@@ -11,6 +11,7 @@ class TokenUsage(BaseModel):
 
 class MessageRole(str, Enum):
     SYSTEM = "system"
+    ASSISTANT= "assistant"
     USER = "user"
     TOOL = "tool"
 class ChatMessage(BaseModel):
@@ -19,6 +20,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     messages: List[ChatMessage] = Field(default=list, description="聊天消息内容")
     model: str = Field(default="deepseek-chat", description="模型名称")
     temperature: float = Field(default=0.7, ge=0, le=2, description="温度")
@@ -56,3 +58,11 @@ class SourceDocument(BaseModel):
     content: str = Field(..., description="命中的文档片段")
     score: float = Field(default=0.0, ge=0, le=1, description="相关性分数")
     metadata: dict[str, Any] = Field(default_factory=dict, description="文档元数据")    
+
+# title
+class GenerateTitleRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=500, description="用户第一条消息")
+
+
+class GenerateTitleResponse(BaseModel):
+    title: str = Field(..., description="生成的会话标题")    
