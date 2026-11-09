@@ -9,6 +9,7 @@ from app.schema.chat import (
     TokenUsage,
 )
 from app.core.config import settings
+from fastapi import HTTPException, status
 
 
 async def chat_with_ai(request: ChatRequest) -> ChatResponse:

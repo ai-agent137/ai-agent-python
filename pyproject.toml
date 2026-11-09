@@ -8,5 +8,6 @@ dependencies = [
     "fastapi>=0.162.1",
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.2",
+    "starlette>=1.10.0",
     "uvicorn>=0.54.0",
 ]

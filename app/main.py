@@ -2,12 +2,20 @@ from fastapi import FastAPI
 from app.api.v1.api import api_router
 
 from app.core.config import settings
+from app.core.logging import setup_logging
+from app.core.middleware import register_middleware
 def createApp() -> FastAPI:
+    #  设置日志
+    setup_logging()
+    # 初始化app
     app = FastAPI(
-    title=settings.app_name,
-    description="Python + FastAPI + LLM + Agent",
-    version= settings.app_version,
-)
+        title=settings.app_name,
+        description="Python + FastAPI + LLM + Agent",
+        version= settings.app_version,
+    )
+    # 注册中间件
+    register_middleware(app)
+    # 注册路由
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 
     @app.get("/")
