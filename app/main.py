@@ -16,7 +16,7 @@ def createApp() -> FastAPI:
     )
     # 注册中间件
     register_middleware(app)
-    # 注册同意异常捕获
+    # 注册异常管理器
     register_exception_handlers(app)
     # 注册路由
     app.include_router(api_router, prefix=settings.api_v1_prefix)

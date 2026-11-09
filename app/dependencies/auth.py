@@ -2,6 +2,7 @@ from fastapi import Depends, Header, HTTPException, status
 from app.dependencies.settings import get_app_settings
 from app.schema.user import CurrentUser, UserRole
 from app.core.config import settings
+from app.core.request_context import set_user_id
 
 async def verify_api_key(
         x_api_key: str | None = Header(default=None),
@@ -36,6 +37,8 @@ async def get_current_user(
             detail="缺少请求头 x-username",
         )
     role = UserRole.ADMIN if x_user_role == "admin" else UserRole.USER
+    # 存储 user_id 到上下文变量中
+    set_user_id(x_user_id)
     return CurrentUser(
         user_id=x_user_id,
         username=x_username,

@@ -23,3 +23,10 @@ async def error_demo():
         status_code=400,
         detail="这是一个错误示例"
     )
+
+@router.get("/system-error-demo")
+async def system_error_demo():
+    result = 1 / 0
+    return {
+        "result": result
+    }

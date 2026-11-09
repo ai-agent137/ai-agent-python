@@ -23,3 +23,42 @@ app/
 └── dependencies/     FastAPI 依赖注入
 
 ## api文档：http://127.0.0.1:8000/docs
+## 错误响应格式
+{
+  "code": 50000,
+  "message": "服务器内部错误",
+  "data": null,
+  "trace_id": "trace_xxx"
+}
+
+
+##  当前完整请求链路
+
+```text id="ye5h2t"
+HTTP Request
+    ↓
+trace_and_log_middleware
+    ↓
+生成 trace_id
+    ↓
+记录 request_start
+    ↓
+verify_api_key
+    ↓
+get_current_user
+    ↓
+Router
+    ↓
+Service
+    ↓
+Repository / LLM / RAG
+    ↓
+如果成功：ApiResponse
+    ↓
+如果失败：Exception Handler -> ErrorResponse
+    ↓
+Middleware 添加响应头
+    ↓
+记录 request_end
+    ↓
+HTTP Response

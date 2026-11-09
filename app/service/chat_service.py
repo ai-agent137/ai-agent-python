@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-
+from app.core.logging import get_logger
 from app.schema.chat import (
     ChatRequest,
     ChatResponse,
@@ -10,6 +10,9 @@ from app.schema.chat import (
 )
 from app.core.config import settings
 from fastapi import HTTPException, status
+
+
+logger = get_logger(__name__)
 
 
 async def chat_with_ai(request: ChatRequest) -> ChatResponse:
@@ -31,6 +34,9 @@ async def chat_with_ai(request: ChatRequest) -> ChatResponse:
         prompt_tokens=count_mock_tokens_from_messages(request),
         completion_tokens=len(answer),
         total_tokens=count_mock_tokens_from_messages(request) + len(answer),
+    )
+    logger.info(
+        f"chat_start model={model} message_count={len(request.messages)}"
     )
 
     sources = build_mock_sources(latest_user_message)
