@@ -14,5 +14,5 @@ class ApiResponse(BaseModel, Generic[T]):
 class ErrorResponse(BaseModel):
     code: int = Field(default=500, description="错误码")
     message: str = Field(..., description="错误信息")
-    detail: str | None = Field(default=None, description="错误详情")
+    data: dict | list | None = Field(default=None, description="错误详情")
     trace_id: str | None = Field(default=None, description="链路追踪 ID")
