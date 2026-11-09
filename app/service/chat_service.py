@@ -8,12 +8,14 @@ from app.schema.chat import (
     SourceDocument,
     TokenUsage,
 )
+from app.core.config import settings
 
 
 async def chat_with_ai(request: ChatRequest) -> ChatResponse:
     await asyncio.sleep(0.5)
 
     latest_user_message = get_latest_user_message(request)
+    model = request.model or settings.default_model
 
     if "AI Agent" in latest_user_message:
         answer = "AI Agent 是能够理解目标、规划步骤、调用工具并根据结果完成任务的智能体。"
@@ -33,8 +35,8 @@ async def chat_with_ai(request: ChatRequest) -> ChatResponse:
     sources = build_mock_sources(latest_user_message)
 
     return ChatResponse(
-        answer=answer,
-        model=request.model,
+        answer = answer,
+        model= model,
         session_id=request.session_id or f"s_{uuid.uuid4().hex[:8]}",
         message_id=f"m_{uuid.uuid4().hex[:8]}",
         usage=usage,

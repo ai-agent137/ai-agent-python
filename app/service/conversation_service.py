@@ -6,11 +6,20 @@ from app.schema.conversation import (
     ConversationMessagesResponse,
     ConversationResponse,
 )
+from app.repositories.conversation_repository import conversation_respository
+
+from app.repositories.knowledge_repository import knowledge_repository
+from app.schema.chat import TokenUsage
 
 
 async def create_conversation(
     request: ConversationCreateRequest,
 ) -> ConversationResponse:
+    conversation_id=f"c_{uuid.uuid4().hex[:8]}"
+    conversation = await conversation_respository.create(
+        conversation_id=conversation_id,
+        request=request,
+    )
     return ConversationResponse(
         conversation_id=f"c_{uuid.uuid4().hex[:8]}",
         title=request.title,
