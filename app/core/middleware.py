@@ -32,7 +32,7 @@ def register_middleware(app: FastAPI):
             response: Response = await call_next(request)
         except Exception:
             cost_ms = (time.perf_counter() - start_time) * 1000
-            logger.Exception(
+            logger.exception(
                 f"request_exception method={request.method} "
                 f"path={request.url.path} cost_ms={cost_ms:.2f}"
             )  

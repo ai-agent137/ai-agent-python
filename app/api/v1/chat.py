@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Path, Query, Body
 from app.dependencies.auth import get_current_user
-from app.dependencies.llm import get_llm_provider
+from app.dependencies.llm import MockLLMProvider, get_llm_provider
 from app.schema.chat import ChatRequest
 from app.schema.response import ApiResponse
 from app.schema.user import CurrentUser

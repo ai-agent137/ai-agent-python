@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.api.v1.api import api_router
 
 from app.core.config import settings
+from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import register_middleware
 def createApp() -> FastAPI:
@@ -15,6 +16,8 @@ def createApp() -> FastAPI:
     )
     # 注册中间件
     register_middleware(app)
+    # 注册同意异常捕获
+    register_exception_handlers(app)
     # 注册路由
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 
