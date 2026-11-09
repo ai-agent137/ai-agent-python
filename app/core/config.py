@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     default_model: str = Field(default="deepseek-chat")
     supported_models: str = Field(default="deepseek-chat,qwen-plus,gpt-4o-mini")
+
+    app_api_key: str = Field(default="dev-api-key-123")
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

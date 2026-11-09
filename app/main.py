@@ -1,8 +1,4 @@
-from fastapi import FastAPI, Query
-from app.api.v1.chat import router as chat_router
-from app.api.v1.conversations import router as conversations_router
-from app.api.v1.rag import router as rag_router
-from app.api.v1.health import router as health_router
+from fastapi import FastAPI
 from app.api.v1.api import api_router
 
 from app.core.config import settings
