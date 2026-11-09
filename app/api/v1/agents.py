@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.dependencies.agent_context import AgentContext, get_agent_context
-from app.schema.response import Response
+from app.schema.response import ApiResponse
 
 router = APIRouter()
 
@@ -18,17 +18,17 @@ class AgentRunResponse(BaseModel):
     debug: bool = Field(default=False, description="是否调试模式")
 
 
-@router.post("/agents/run", response_model=Response[AgentRunResponse])
+@router.post("/agents/run", response_model=ApiResponse[AgentRunResponse])
 async def run_agent(
     request: AgentRunRequest,
     context: AgentContext = Depends(get_agent_context),
-) -> Response[AgentRunResponse]:
+) -> ApiResponse[AgentRunResponse]:
     answer = (
         f"用户 {context.current_user.username} 调用了 {request.agent_id}，"
         f"问题是：{request.question}"
     )
 
-    return Response[AgentRunResponse](
+    return ApiResponse[AgentRunResponse](
         data=AgentRunResponse(
             answer=answer,
             trace_id=context.trace_id,

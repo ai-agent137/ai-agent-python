@@ -1,19 +1,19 @@
 from fastapi import APIRouter
 import uuid
 from app.schema.rag import RAGQueryRequest, RAGQueryResponse
-from app.schema.response import Response
+from app.schema.response import ApiResponse
 from app.service.rag_service import query_rag
 
 router = APIRouter()
 
 
-@router.post("/rag/query", response_model=Response[RAGQueryResponse])
+@router.post("/rag/query", response_model=ApiResponse[RAGQueryResponse])
 async def rag_query(
     request: RAGQueryRequest,
-) -> Response[RAGQueryResponse]:
+) -> ApiResponse[RAGQueryResponse]:
     answer = await query_rag(request=request)
 
-    return Response[RAGQueryResponse](
+    return ApiResponse[RAGQueryResponse](
         data=answer
     )
     

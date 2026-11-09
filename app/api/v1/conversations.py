@@ -7,7 +7,7 @@ from app.schema.conversation import (
     ConversationMessagesResponse,
     ConversationResponse,
 )
-from app.schema.response import Response
+from app.schema.response import ApiResponse
 from app.service.conversation_service import (
     create_conversation,
     get_conversation_messages,
@@ -16,18 +16,18 @@ from app.service.conversation_service import (
 router = APIRouter()
 
 
-@router.post("/conversations", response_model=Response[ConversationResponse])
+@router.post("/conversations", response_model=ApiResponse[ConversationResponse])
 async def create_new_conversation(
     request: ConversationCreateRequest,
     db: MockDBSession = Depends(get_db_session),
     pagination: PaginationParams = Depends(PaginationParams)
-) -> Response[dict]:
+) -> ApiResponse[dict]:
     sql_result= await db.execute("INSERT INTO conversations ...")
     print(sql_result)
 
     result = await create_conversation(request)
 
-    return Response[dict](
+    return ApiResponse[dict](
         data={
             page: pagination.page,
             pageSize: pagination.pageSize,
@@ -39,14 +39,14 @@ async def create_new_conversation(
 
 @router.get(
     "/conversations/{conversation_id}/messages",
-    response_model=Response[ConversationMessagesResponse],
+    response_model=ApiResponse[ConversationMessagesResponse],
 )
 async def get_messages(
     conversation_id: str = Path(..., description="会话 ID")
-) -> Response[ConversationMessagesResponse]:
+) -> ApiResponse[ConversationMessagesResponse]:
     result = await get_conversation_messages(conversation_id)
 
 
-    return Response[ConversationMessagesResponse](
+    return ApiResponse[ConversationMessagesResponse](
         data=result
     )
