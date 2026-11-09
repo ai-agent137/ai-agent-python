@@ -1,4 +1,4 @@
-# 项目管理工具
+# ai应用
 ```sh
 # 初始化项目
 uv init ai-agent-python
@@ -21,8 +21,10 @@ app/
 ├── repositories/     数据访问层
 ├── models/           数据库 ORM 模型
 └── dependencies/     FastAPI 依赖注入
+```
 
 ## api文档：http://127.0.0.1:8000/docs
+
 ## 错误响应格式
 {
   "code": 50000,
