@@ -52,6 +52,9 @@ class ConversationRespository:
         role: str,
         content: str,
         model: str | None = None,
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        total_tokens: int = 0,
     ) -> Message:
         message = Message(
             id=f"m_{uuid.uuid4().hex[:8]}",
@@ -59,6 +62,9 @@ class ConversationRespository:
             role=role,
             content=content,
             model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
         )
 
         db.add(message)

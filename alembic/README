@@ -1,0 +1,18 @@
+# 初始化
+```sh
+uv run alembic init -t async alembic
+
+# 第一版迁移文件
+uv run alembic revision --autogenerate -m "init tables"
+
+# 执行迁移 upgrade head
+uv run alembic upgrade head
+
+# 查看当前版本：
+uv run alembic current
+# 查看历史：
+uv run alembic history
+# 查看最新
+uv run alembic heads
+
+```
