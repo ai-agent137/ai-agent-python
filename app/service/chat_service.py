@@ -9,16 +9,27 @@ from app.schema.chat import (
     TokenUsage,
 )
 from app.core.config import settings
-from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.repositories.conversation_repository import conversation_repository
 
 
 logger = get_logger(__name__)
 
 
-async def chat_with_ai(request: ChatRequest) -> ChatResponse:
-    await asyncio.sleep(0.5)
+async def chat_with_ai(
+        request: ChatRequest,
+        db: AsyncSession | None = None
+    ) -> ChatResponse:
 
     latest_user_message = get_latest_user_message(request)
+
+    await conversation_repository.add_message(
+        db=db,
+        conversation_id=request.session_id,
+        role=MessageRole.USER.value,
+        content=latest_user_message,
+        model=request.model,
+    )
     model = request.model or settings.default_model
 
     if "AI Agent" in latest_user_message:
@@ -40,6 +51,13 @@ async def chat_with_ai(request: ChatRequest) -> ChatResponse:
     )
 
     sources = build_mock_sources(latest_user_message)
+    await conversation_repository.add_message(
+        db=db,
+        conversation_id=request.session_id,
+        role=MessageRole.ASSISTANT.value,
+        content=answer,
+        model=model,
+    )
 
     return ChatResponse(
         answer = answer,

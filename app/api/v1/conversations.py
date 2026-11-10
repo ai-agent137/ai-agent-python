@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, Path
-from app.dependencies.database import MockDBSession, get_db_session
+from app.dependencies.auth import get_current_user
+from app.dependencies.database import get_db_session
 from app.dependencies.pagination import PaginationParams
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.schema.conversation import (
     ConversationCreateRequest,
     ConversationMessagesResponse,
     ConversationResponse,
 )
 from app.schema.response import ApiResponse
+from app.schema.user import CurrentUser
 from app.service.conversation_service import (
     create_conversation,
     get_conversation_messages,
@@ -19,21 +21,18 @@ router = APIRouter()
 @router.post("/conversations", response_model=ApiResponse[ConversationResponse])
 async def create_new_conversation(
     request: ConversationCreateRequest,
-    db: MockDBSession = Depends(get_db_session),
-    pagination: PaginationParams = Depends(PaginationParams)
+    db: AsyncSession = Depends(get_db_session),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ApiResponse[dict]:
-    sql_result= await db.execute("INSERT INTO conversations ...")
-    print(sql_result)
 
-    result = await create_conversation(request)
+    result = await create_conversation(
+        db=db,
+        request=request,
+        user_id=current_user.user_id,
+    )
 
-    return ApiResponse[dict](
-        data={
-            page: pagination.page,
-            pageSize: pagination.pageSize,
-            offset: pagination.offset,
-            list: result
-        }
+    return ApiResponse[ConversationResponse](
+        data=result
     )
 
 
@@ -42,11 +41,28 @@ async def create_new_conversation(
     response_model=ApiResponse[ConversationMessagesResponse],
 )
 async def get_messages(
-    conversation_id: str = Path(..., description="会话 ID")
+    conversation_id: str = Path(..., description="会话 ID"),
+    db: AsyncSession = Depends(get_db_session),
 ) -> ApiResponse[ConversationMessagesResponse]:
-    result = await get_conversation_messages(conversation_id)
-
+    result = await get_conversation_messages(
+        db=db,
+        conversation_id=conversation_id,
+    )
 
     return ApiResponse[ConversationMessagesResponse](
         data=result
+    )
+
+
+@router.get("/conversations", response_model=ApiResponse[dict])
+async def list_conversations(
+    pagination: PaginationParams = Depends(PaginationParams),
+) -> ApiResponse[dict]:
+    return ApiResponse[dict](
+        data={
+            "page": pagination.page,
+            "page_size": pagination.page_size,
+            "offset": pagination.offset,
+            "items": [],
+        }
     )

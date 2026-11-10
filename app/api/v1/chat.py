@@ -1,20 +1,22 @@
 from fastapi import APIRouter, Depends, Path, Query, Body
 from app.dependencies.auth import get_current_user
+from app.dependencies.database import get_db_session
 from app.dependencies.llm import MockLLMProvider, get_llm_provider
 from app.schema.chat import ChatRequest
 from app.schema.response import ApiResponse
 from app.schema.user import CurrentUser
 from app.service.chat_service import chat_with_ai
 from app.schema.chat import ChatResponse, GenerateTitleRequest,GenerateTitleResponse
-
+from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter()
 
 @router.post("/chat", response_model=ApiResponse[ChatResponse])
 async def chat_endpoint(
     request: ChatRequest,
+     db: AsyncSession = Depends(get_db_session),
     current_user: CurrentUser = Depends(get_current_user)
     ):
-    result =  await chat_with_ai(request)
+    result =  await chat_with_ai(request, db)
     result.trace_id = f"{result.trace_id}_user_{current_user.user_id}"
     return ApiResponse[ChatResponse](data=result)
 

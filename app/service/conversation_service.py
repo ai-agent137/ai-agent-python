@@ -6,39 +6,39 @@ from app.schema.conversation import (
     ConversationMessagesResponse,
     ConversationResponse,
 )
-from app.repositories.conversation_repository import conversation_respository
+from app.repositories.conversation_repository import conversation_repository
 
-from app.repositories.knowledge_repository import knowledge_repository
-from app.schema.chat import TokenUsage
-
+from sqlalchemy.ext.asyncio import AsyncSession
 
 async def create_conversation(
+    db: AsyncSession,
     request: ConversationCreateRequest,
+    user_id: str | None = None,
 ) -> ConversationResponse:
-    conversation_id=f"c_{uuid.uuid4().hex[:8]}"
-    conversation = await conversation_respository.create(
-        conversation_id=conversation_id,
+    conversation = await conversation_repository.create(
+        db=db,
         request=request,
+        user_id=user_id,
     )
     return ConversationResponse(
-        conversation_id=f"c_{uuid.uuid4().hex[:8]}",
-        title=request.title,
+        conversation_id=conversation.id,
+        title=conversation.title,
+        status=conversation.status,
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
     )
 
 
 async def get_conversation_messages(
+    db: AsyncSession,
     conversation_id: str,
 ) -> ConversationMessagesResponse:
+    messages = await conversation_repository.get_messages(
+        db=db,
+        conversation_id=conversation_id,
+    )
+
     return ConversationMessagesResponse(
         conversation_id=conversation_id,
-        messages=[
-            ChatMessage(
-                role=MessageRole.USER,
-                content="什么是 AI Agent？"
-            ),
-            ChatMessage(
-                role=MessageRole.ASSISTANT,
-                content="AI Agent 是能够调用工具完成任务的智能体。"
-            )
-        ]
+        messages=messages,
     )

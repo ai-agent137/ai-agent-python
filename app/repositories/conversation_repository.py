@@ -1,34 +1,72 @@
+from sqlalchemy import select
+from app.models.conversation import Conversation
 from app.schema.chat import ChatMessage, MessageRole
 from app.schema.conversation import ConversationCreateRequest
-
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.message import Message
+import uuid
 class ConversationRespository:
-    def __init__(self):
-        self._conversations: dict[str, dict] = {}
-        self._messages: dict[str, list[ChatMessage]] = {}
-    async def create(self, conversation_id: str, request: ConversationCreateRequest) -> dict:
-        conversation = {
-            "conversation_id": conversation_id,
-            "title": request.title,
-        }
-
-        self._conversations[conversation_id] = conversation
-        self._messages[conversation_id] = []
-
+    async def create(
+            self, 
+            db: AsyncSession,
+            request: ConversationCreateRequest,
+            user_id: str | None = None
+    ) -> dict:
+        
+        conversation = Conversation(
+            id = f"c_{uuid.uuid4().hex[:8]}",
+            title=request.title,
+            user_id=user_id,
+        )
+        db.add(conversation)
+        await db.commit()
+        await db.refresh(conversation)
         return conversation
-    async def get_messages(self, conversation_id: str) -> list[ChatMessage]:
-        if conversation_id not in self._messages:
-            return [
-                ChatMessage(
-                    role=MessageRole.USER,
-                    content="什么是 AI Agent？"
-                ),
-                ChatMessage(
-                    role=MessageRole.ASSISTANT,
-                    content="AI Agent 是能够调用工具完成任务的智能体。"
-                )
-            ]
+    
+    async def get_messages(
+        self,
+        db: AsyncSession,
+        conversation_id: str,
+    ) -> list[ChatMessage]:
+        stmt = (
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .order_by(Message.created_at.asc())
+        )
 
-        return self._messages[conversation_id] 
+        result = await db.execute(stmt)
+        messages = result.scalars().all()
+
+        return [
+            ChatMessage(
+                role=MessageRole(message.role),
+                content=message.content,
+            )
+            for message in messages
+        ]
+    
+    async def add_message(
+        self,
+        db: AsyncSession,
+        conversation_id: str,
+        role: str,
+        content: str,
+        model: str | None = None,
+    ) -> Message:
+        message = Message(
+            id=f"m_{uuid.uuid4().hex[:8]}",
+            conversation_id=conversation_id,
+            role=role,
+            content=content,
+            model=model,
+        )
+
+        db.add(message)
+        await db.commit()
+        await db.refresh(message)
+
+        return message
 
 
-conversation_respository = ConversationRespository()         
+
+conversation_repository = ConversationRespository()         
