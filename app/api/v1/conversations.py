@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, Path
+from redis import Redis
 from app.dependencies.auth import get_current_user
 from app.dependencies.database import get_db_session
 from app.dependencies.pagination import PaginationParams
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.dependencies.redis import get_redis_client
 from app.schema.conversation import (
     ConversationCreateRequest,
     ConversationMessagesResponse,
@@ -43,10 +45,12 @@ async def create_new_conversation(
 async def get_messages(
     conversation_id: str = Path(..., description="会话 ID"),
     db: AsyncSession = Depends(get_db_session),
+    redis: Redis = Depends(get_redis_client)
 ) -> ApiResponse[ConversationMessagesResponse]:
     result = await get_conversation_messages(
         db=db,
         conversation_id=conversation_id,
+        redis=redis
     )
 
     return ApiResponse[ConversationMessagesResponse](

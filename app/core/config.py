@@ -19,6 +19,12 @@ class Settings(BaseSettings):
         default= "postgresql+asyncpg://postgres:123456@localhost:5432/ai_agent_course"
     )
 
+    # redis 
+    redis_url: str = Field(default="redis://:redis123@localhost:6379/0")
+    redis_default_ttl_seconds: int = Field(default=300)
+    rate_limit_window_seconds: int = Field(default=60)
+    rate_limit_max_requests: int = Field(default=20)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

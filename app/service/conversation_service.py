@@ -1,5 +1,8 @@
 import uuid
 
+from redis import Redis
+from app.redis.cache import cache_recent_messages, get_cached_recent_messages
+
 from app.schema.chat import ChatMessage, MessageRole
 from app.schema.conversation import (
     ConversationCreateRequest,
@@ -32,11 +35,31 @@ async def create_conversation(
 async def get_conversation_messages(
     db: AsyncSession,
     conversation_id: str,
+    redis: Redis | None = None
 ) -> ConversationMessagesResponse:
+    if redis:
+        cache_messages = await get_cached_recent_messages(
+            redis = redis,
+            conversation_id = conversation_id
+        )
+        if cache_messages is not None:
+            return ConversationMessagesResponse(
+                conversation_id=conversation_id,
+                messages=cache_messages
+            )
+    
     messages = await conversation_repository.get_messages(
         db=db,
         conversation_id=conversation_id,
     )
+
+    # 缓存10条    
+    if redis:
+        await cache_recent_messages(
+            redis=redis,
+            conversation_id=conversation_id,
+            messages=messages[-10:],
+        )
 
     return ConversationMessagesResponse(
         conversation_id=conversation_id,
