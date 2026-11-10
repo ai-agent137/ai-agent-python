@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     supported_models: str = Field(default="deepseek-chat,qwen-plus,gpt-4o-mini")
 
     app_api_key: str = Field(default="dev-api-key-123")
+
+    database_url: str = Field(
+        default= "postgresql+asyncpg://postgres:123456@localhost:5432/ai_agent_course"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
