@@ -9,9 +9,18 @@ class Settings(BaseSettings):
     app_version: str = Field(default="0.1.0")
     api_v1_prefix: str = Field(default="/api/v1")
     debug: bool = Field(default=True)
-
+    
+    # 模型相关
     default_model: str = Field(default="deepseek-chat")
     supported_models: str = Field(default="deepseek-chat,qwen-plus,gpt-4o-mini")
+    openai_api_key: str = Field(default="")
+    openai_base_url: str = Field(default="https://api.openai.com/v1")
+
+    deepseek_api_key: str = Field(default="")
+    deepseek_base_url: str = Field(default="https://api.deepseek.com")
+
+    dashscope_api_key: str = Field(default="")
+    qwen_base_url: str = Field(default="https://dashscope.aliyuncs.com/compatible-mode/v1")
 
     app_api_key: str = Field(default="dev-api-key-123")
 
