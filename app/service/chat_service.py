@@ -1,6 +1,9 @@
 import asyncio
 import uuid
+
+from redis.asyncio import Redis
 from app.core.logging import get_logger
+from app.redis.cache import cache_chat_response, get_cached_chat_response
 from app.schema.chat import (
     ChatRequest,
     ChatResponse,
@@ -9,6 +12,9 @@ from app.schema.chat import (
     TokenUsage,
 )
 from app.core.config import settings
+from app.core.exceptions import AppException, ErrorCode
+from app.models.conversation import Conversation
+from app.schema.conversation import ConversationCreateRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.conversation_repository import conversation_repository
 
@@ -18,7 +24,9 @@ logger = get_logger(__name__)
 
 async def chat_with_ai(
         request: ChatRequest,
-        db: AsyncSession | None = None
+        db: AsyncSession,
+        redis: Redis | None = None,
+        user_id: str | None = None,
     ) -> ChatResponse:
 
     latest_user_message = get_latest_user_message(request)
@@ -29,9 +37,27 @@ async def chat_with_ai(
         role=MessageRole.USER.value,
         content=latest_user_message,
         model=request.model,
-        prompt_tokens=usage.prompt_tokens,
     )
     model = request.model or settings.default_model
+    # 缓存
+    if redis:
+        cached_answer = await get_cached_chat_response(
+            redis=redis,
+            question=latest_user_message,
+        )
+        if cached_answer:
+            logger.info("对话响应命中缓存")
+
+            return ChatResponse(
+                answer=cached_answer,
+                model=model,
+                session_id=request.session_id,
+                message_id=f"m_{uuid.uuid4().hex[:8]}",
+                usage=TokenUsage(),
+                sources=[],
+                trace_id=f"trace_{uuid.uuid4().hex[:8]}",
+            )
+
 
     if "AI Agent" in latest_user_message:
         answer = "AI Agent 是能够理解目标、规划步骤、调用工具并根据结果完成任务的智能体。"
@@ -62,11 +88,18 @@ async def chat_with_ai(
         completion_tokens=usage.completion_tokens,
         total_tokens=usage.total_tokens,
     )
+    # 缓存答案
+    if redis:
+        await cache_chat_response(
+            redis=redis,
+            question=latest_user_message,
+            answer=answer,
+        )
 
     return ChatResponse(
         answer = answer,
         model= model,
-        session_id=request.session_id or f"s_{uuid.uuid4().hex[:8]}",
+        session_id=request.session_id,
         message_id=f"m_{uuid.uuid4().hex[:8]}",
         usage=usage,
         sources=sources,

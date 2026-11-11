@@ -40,7 +40,7 @@ def upgrade() -> None:
     )
     op.create_table('messages',
     sa.Column('id', sa.String(length=64), nullable=False),
-    sa.Column('conversation_id', sa.String(length=64), nullable=False),
+    sa.Column('conversation_id', sa.String(length=64), nullable=True),
     sa.Column('role', sa.String(length=50), nullable=False),
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('model', sa.String(length=100), nullable=True),
