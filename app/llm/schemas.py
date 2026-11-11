@@ -3,11 +3,17 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+class LLMProviderName(str, Enum):
+    OPENAI = "openai"
+    DEEPSEEK = "deepseek"
+    QWEN = "qwen"
+
 class LLMRole(str, Enum):
     SYSTEM = "system"
-    User="user"
+    USER="user"
     ASSISTANT="assistant"
     TOOL="tool"
+
 class LLMMessage(BaseModel):
     role: LLMRole = Field(..., description="消息角色")
     content: str = Field(..., description="消息内容")
@@ -27,7 +33,16 @@ class LLMUsage(BaseModel):
 
 
 class LLMResponse(BaseModel):
+    provider: LLMProviderName = Field(..., description="模型供应商")
     model: str = Field(..., description="模型名称")
     content: str = Field(..., description="模型输出内容")
     usage: LLMUsage = Field(default_factory=LLMUsage, description="Token 用量")
-    raw_response: dict[str, Any] = Field(default_factory=dict, description="原始响应")        
+    raw_response: dict[str, Any] = Field(default_factory=dict, description="原始响应")      
+
+class LLMStreamChunk(BaseModel):
+    provider: LLMProviderName = Field(..., description="模型供应商")
+    model: str = Field(..., description="模型名称")
+    content: str = Field(default="", description="当前增量内容")
+    finish_reason: str | None = Field(default=None, description="结束原因")
+    usage: LLMUsage | None = Field(default=None, description="Token 用量")
+    raw_chunk: dict[str, Any] = Field(default_factory=dict, description="原始 chunk")    

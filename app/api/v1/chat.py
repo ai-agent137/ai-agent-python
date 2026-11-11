@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, Path, Query, Body
 from redis.asyncio import Redis
 from app.dependencies.auth import get_current_user
 from app.dependencies.database import get_db_session
-from app.dependencies.llm import MockLLMProvider, get_llm_provider
+from app.dependencies.llm import get_llm_provider
 from app.dependencies.rate_limit import chat_rate_limit
 from app.dependencies.redis import get_redis_client
+from app.llm.base import BaseLLMProvider
 from app.schema.chat import ChatRequest
 from app.schema.conversation import ConversationMessagesResponse
 from app.schema.response import ApiResponse
@@ -24,13 +25,14 @@ async def chat_endpoint(
     request: ChatRequest,
     db: AsyncSession = Depends(get_db_session),
     current_user: CurrentUser = Depends(get_current_user),
-    redis: Redis = Depends(get_redis_client)
+    redis: Redis = Depends(get_redis_client),
+    llm_provider: BaseLLMProvider = Depends(get_llm_provider),
     ):
     result =  await chat_with_ai(
         request=request,
          db=db,
          redis=redis,
-         user_id=current_user.user_id,
+         llm_provider=llm_provider
         )
     result.trace_id = f"{result.trace_id}_user_{current_user.user_id}"
     return ApiResponse[ChatResponse](data=result)
@@ -47,21 +49,4 @@ async def generate_chat_title(
         data=GenerateTitleResponse(title=title)
     )
 
-@router.post("/chat/di-demo")
-async def chat_di_demo(
-    request: ChatRequest,
-    current_user: CurrentUser = Depends(get_current_user),
-    llm_provider: MockLLMProvider = Depends(get_llm_provider)
-) -> ApiResponse[ChatResponse]:
-    latest_message = request.messages[-1].content
-    answer = await llm_provider.chat(
-        message=f"用户{current_user.username} 问: { latest_message}"
-    )
-    result = ChatResponse(
-        answer=answer,
-        model=llm_provider.model,
-        session_id=request.session_id
-    )
-    return ApiResponse[ChatResponse](
-        data=result
-    )
+
