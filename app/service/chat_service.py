@@ -17,10 +17,10 @@ from app.schema.chat import (
 )
 from app.core.config import settings
 from app.core.exceptions import AppException, ErrorCode
-from app.models.conversation import Conversation
-from app.schema.conversation import ConversationCreateRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.conversation_repository import conversation_repository
+from app.prompts.base import PromptScenario
+from app.service.prompt_service import prompt_service
 
 
 logger = get_logger(__name__)
@@ -143,16 +143,50 @@ async def chat_with_ai(
     )
 
 
-def build_llm_request_from_chat_request(request: ChatRequest) -> LLMRequest:
-    return LLMRequest(
-        model=request.model,
-        messages=[
+def build_prompt_messages_for_chat(request: ChatRequest) -> list[LLMMessage]:
+    has_system_message = any(
+        message.role == MessageRole.SYSTEM
+        for message in request.messages
+    )
+    if has_system_message:
+        return [
             LLMMessage(
                 role=LLMRole(message.role.value),
                 content=message.content,
             )
             for message in request.messages
-        ],
+        ]
+    latest_user_message = get_latest_user_message(request)
+    # 电商场景
+    if request.prompt_scenario == PromptScenario.ECOMMERCE_CUSTOMER_SERVICE.value:
+        version = request.prompt_version or "v1"
+        return prompt_service.render_by_scenario(
+            scenario=PromptScenario.ECOMMERCE_CUSTOMER_SERVICE,
+            version=version,
+            variables={
+                "user_question": latest_user_message,
+                "business_rules": request.metadata.get(
+                    "business_rules",
+                    "暂无额外业务规则。",
+                ),
+                "order_info": request.metadata.get(
+                    "order_info",
+                    "用户未提供订单信息。",
+                ),
+            },
+        )
+
+    return prompt_service.render_by_scenario(
+        scenario=PromptScenario.GENERAL_CHAT,
+        variables={
+            "user_question": latest_user_message,
+        },
+    )
+
+def build_llm_request_from_chat_request(request: ChatRequest) -> LLMRequest:
+    return LLMRequest(
+        model=request.model,
+        messages=build_prompt_messages_for_chat(request), # 增加提示词模板
         temperature=request.temperature,
         stream=request.stream,
     )
