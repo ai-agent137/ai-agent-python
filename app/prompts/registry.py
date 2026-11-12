@@ -3,6 +3,11 @@ from app.prompts.base import PromptScenario, PromptTemplate
 from app.prompts.ecommerce import ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V1, ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V2
 from app.prompts.rag import RAG_QA_PROMPT_V1
 from app.prompts.templates import GENERAL_CHAT_PROMPT_V1
+from app.prompts.structured import (
+    AGENT_PLAN_STRUCTURED_PROMPT_V1,
+    INTENT_CLASSIFICATION_STRUCTURED_PROMPT_V1,
+    RAG_STRUCTURED_ANSWER_PROMPT_V1,
+)
 
 
 class PromptRegistry:
@@ -47,3 +52,6 @@ prompt_registry.register(ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V1)
 prompt_registry.register(ECOMMERCE_CUSTOMER_SERVICE_PROMPT_V2)
 prompt_registry.register(RAG_QA_PROMPT_V1)
 prompt_registry.register(AGENT_PLANNER_PROMPT_V1)
+prompt_registry.register(INTENT_CLASSIFICATION_STRUCTURED_PROMPT_V1)
+prompt_registry.register(RAG_STRUCTURED_ANSWER_PROMPT_V1)
+prompt_registry.register(AGENT_PLAN_STRUCTURED_PROMPT_V1)

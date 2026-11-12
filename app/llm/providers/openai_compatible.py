@@ -203,6 +203,8 @@ class OpenAICompatibleProvider(BaseLLMProvider):
 
         if request.max_tokens is not None:
             payload["max_tokens"] = request.max_tokens
+        if request.response_format is not None:
+            payload["response_format"] = request.response_format
 
         return payload
     def _parse_chat_response(self, data: dict) -> LLMResponse:

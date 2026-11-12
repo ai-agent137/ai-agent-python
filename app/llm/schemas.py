@@ -25,6 +25,10 @@ class LLMRequest(BaseModel):
     max_tokens: int | None = Field(default=None, ge=1, description="最大输出 token")
     stream: bool = Field(default=False, description="是否流式输出")
     metadata: dict[str, Any] = Field(default_factory=dict, description="扩展信息")
+    response_format: dict | None = Field(
+        default=None,
+        description="模型结构化输出格式约束",
+    )
 
 class LLMUsage(BaseModel):
     prompt_tokens: int = Field(default=0, ge=0, description="输入 token")
