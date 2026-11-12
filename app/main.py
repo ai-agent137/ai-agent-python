@@ -7,6 +7,7 @@ from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import register_middleware
 from app.redis.client import close_redis
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -24,6 +25,21 @@ def createApp() -> FastAPI:
         debug=settings.debug,
         lifespan=lifespan
     )
+    # 跨域
+    app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8888",
+        "http://127.0.0.1:3000",
+        "null",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
     # 注册中间件
     register_middleware(app)
     # 注册异常管理器
