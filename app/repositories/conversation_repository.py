@@ -6,22 +6,76 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.message import Message
 import uuid
 class ConversationRespository:
-    async def create(
-            self, 
-            db: AsyncSession,
-            request: ConversationCreateRequest,
-            user_id: str | None = None
-    ) -> dict:
-        
+    async def create_conversation(
+        self,
+        db: AsyncSession,
+        title: str,
+        user_id: str | None = None,
+    ) -> Conversation:
         conversation = Conversation(
-            id = f"c_{uuid.uuid4().hex[:8]}",
-            title=request.title,
+            id=f"c_{uuid.uuid4().hex[:8]}",
+            title=title,
             user_id=user_id,
+            status="active",
         )
+
         db.add(conversation)
         await db.commit()
         await db.refresh(conversation)
+
         return conversation
+
+    async def list_conversations(
+        self,
+        db: AsyncSession,
+        user_id: str | None = None,
+        limit: int = 20,
+    ) -> list[Conversation]:
+        stmt = (
+            select(Conversation)
+            .where(Conversation.status == "active")
+            .order_by(Conversation.updated_at.desc())
+            .limit(limit)
+        )
+
+        if user_id:
+            stmt = stmt.where(Conversation.user_id == user_id)
+
+        result = await db.execute(stmt)
+
+        return list(result.scalars().all())
+    async def get_conversation(
+        self,
+        db: AsyncSession,
+        conversation_id: str,
+    ) -> Conversation | None:
+        stmt = select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.status == "active",
+        )
+
+        result = await db.execute(stmt)
+
+        return result.scalar_one_or_none()
+    # 归档
+    async def archive_conversation(
+        self,
+        db: AsyncSession,
+        conversation_id: str,
+    ) -> bool:
+        conversation = await self.get_conversation(
+            db=db,
+            conversation_id=conversation_id,
+        )
+
+        if not conversation:
+            return False
+
+        conversation.status = "archived"
+
+        await db.commit()
+
+        return True
     
     async def get_messages(
         self,

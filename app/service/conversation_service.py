@@ -21,7 +21,7 @@ class ConversationService:
         request: ConversationCreateRequest,
         user_id: str | None = None,
     ) -> ConversationResponse:
-        conversation = await conversation_repository.create(
+        conversation = await conversation_repository.create_conversation(
             db=db,
             request=request,
             user_id=user_id,

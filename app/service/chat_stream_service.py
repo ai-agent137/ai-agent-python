@@ -8,6 +8,7 @@ from app.core.logging import get_logger
 from app.llm.base import BaseLLMProvider
 from app.llm.errors import LLMProviderError
 from app.llm.schemas import LLMRequest
+from app.redis.cache import get_cached_chat_response
 from app.repositories import conversation_repository
 
 from app.schema.chat import ChatRequest, MessageRole, TokenUsage
@@ -37,6 +38,38 @@ async def stream_chat_with_ai(
         f"流式请求开始: model={llm_request.model} "
         f"message_count={len(llm_request.messages)}"
     )
+    # 缓存流式输出
+    if redis:
+        cache_answer = await get_cached_chat_response(
+            redis=redis,
+            question=latest_user_message,
+        )
+        if cache_answer:
+            logger.info("流式请求命中缓存")
+            yield format_sse(
+                event="message",
+                data={
+                    "content": cache_answer,
+                    "message_id": message_id
+                }
+            )
+            for chunk in split_text(cache_answer, size=8):
+                yield format_sse(
+                    event="message",
+                    data={
+                        "content": chunk,
+                        "message_id": message_id,
+                        "cache_hit": True,
+                    }
+                )
+            yield format_done_event(
+                {
+                    "message_id": message_id,
+                    "finish_reason": "stop",
+                    "usage": final_usage.model_dump(),
+                }
+            )
+            return
 
     yield format_sse(
         event="start",
@@ -136,5 +169,7 @@ async def save_stream_messages(
         completion_tokens=usage.completion_tokens,
         total_tokens=usage.total_tokens,
     )
-
+def split_text(text: str, size: int) -> list[str]:
+    """将文本按指定大小拆分为多个块"""
+    return [text[i:i + size] for i in range(0, len(text), size)]
     

@@ -16,7 +16,6 @@ from app.service.chat_service import chat_with_ai
 from app.schema.chat import ChatResponse, GenerateTitleRequest,GenerateTitleResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.service.chat_stream_service import stream_chat_with_ai
-from app.service.conversation_service import get_conversation_messages
 router = APIRouter()
 
 
@@ -32,7 +31,10 @@ async def chat_steam(
     redis: Redis = Depends(get_redis_client),
     llm_provider: BaseLLMProvider = Depends(get_llm_provider),
 ):
+    request_body.user_id = current_user.user_id
+    request_body.stream = True
     async def event_generator():
+        
         async for event in stream_chat_with_ai(
             request=request_body,
             llm_provider=llm_provider,
@@ -66,6 +68,7 @@ async def chat_endpoint(
     redis: Redis = Depends(get_redis_client),
     llm_provider: BaseLLMProvider = Depends(get_llm_provider),
     ):
+    request.user_id = current_user.user_id
     result =  await chat_with_ai(
         request=request,
          db=db,

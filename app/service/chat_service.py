@@ -20,8 +20,9 @@ from app.core.exceptions import AppException, ErrorCode
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.conversation_repository import conversation_repository
 from app.prompts.base import PromptScenario
+from app.service import tool_calling_service
 from app.service.prompt_service import prompt_service
-from app.service.tool_calling_service import ToolCallingService
+from app.service.tool_calling_service import tool_calling_service
 
 
 logger = get_logger(__name__)
@@ -38,7 +39,15 @@ async def chat_with_ai(
     model = request.model or settings.default_model
 
     logger.info(
-            f"会很开始： model={model} message_count={len(request.messages)}"
+        f"会话开始： model={model} message_count={len(request.messages)}"
+    )
+    # 电商意图调用
+    if should_use_tool_calling(request):
+        return await chat_with_tools(
+            request=request,
+            latest_user_message=latest_user_message,
+            model=model,
+            llm_provider=llm_provider,
         )
 
     # 缓存
@@ -63,26 +72,6 @@ async def chat_with_ai(
     llm_request = build_llm_request_from_chat_request(request) # 请求
 
     # 调用大模型
-    # 电商意图
-    if request.prompt_scenario == "ecommerce_customer_service":
-        tool_result = await ToolCallingService.run_with_tools(
-            user_question=latest_user_message,
-            model=model,
-            llm_provider=llm_provider,
-        )
-
-        answer = tool_result["answer"]
-
-        return ChatResponse(
-            answer=answer,
-            model=model,
-            session_id=request.session_id or f"s_{uuid.uuid4().hex[:8]}",
-            message_id=f"m_{uuid.uuid4().hex[:8]}",
-            usage=TokenUsage(),
-            sources=[],
-            trace_id=f"trace_{uuid.uuid4().hex[:8]}",
-        )
-    # 正常调用
     try:
         llm_response = await llm_provider.chat(llm_request)
     except LLMProviderError as exc:
@@ -201,6 +190,37 @@ def build_prompt_messages_for_chat(request: ChatRequest) -> list[LLMMessage]:
         scenario=PromptScenario.GENERAL_CHAT,
         variables={
             "user_question": latest_user_message,
+        },
+    )
+
+def should_use_tool_calling(request: ChatRequest) -> bool:
+    return request.prompt_scenario == PromptScenario.ECOMMERCE_CUSTOMER_SERVICE.value
+
+async def chat_with_tools(
+    request: ChatRequest,
+    latest_user_message: str,
+    model: str,
+    llm_provider: BaseLLMProvider | None,
+) -> ChatResponse:
+    llm_provider = llm_provider or LLMProviderFactory.create()
+
+    tool_result = await tool_calling_service.run_with_tools(
+        user_question=latest_user_message,
+        model=model,
+        llm_provider=llm_provider,
+    )
+
+    return ChatResponse(
+        answer=tool_result["answer"],
+        model=model,
+        session_id=request.session_id or f"s_{uuid.uuid4().hex[:8]}",
+        message_id=f"m_{uuid.uuid4().hex[:8]}",
+        usage=TokenUsage(),
+        sources=[],
+        trace_id=f"trace_{uuid.uuid4().hex[:8]}",
+        metadata={
+            "tool_calls": tool_result.get("tool_calls", []),
+            "tool_results": tool_result.get("tool_results", []),
         },
     )
 
