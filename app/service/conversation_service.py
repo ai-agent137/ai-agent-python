@@ -17,13 +17,14 @@ from app.repositories.conversation_repository import conversation_repository
 from sqlalchemy.ext.asyncio import AsyncSession
 class ConversationService:
     async def create_conversation(
+        self,
         db: AsyncSession,
         request: ConversationCreateRequest,
         user_id: str | None = None,
     ) -> ConversationResponse:
         conversation = await conversation_repository.create_conversation(
             db=db,
-            request=request,
+            title=request.title,
             user_id=user_id,
         )
         return ConversationResponse(
@@ -73,6 +74,7 @@ class ConversationService:
 
 
     async def get_conversation_messages(
+        self,
         db: AsyncSession,
         conversation_id: str,
         redis: Redis | None = None
@@ -113,4 +115,4 @@ class ConversationService:
             created_at=conversation.created_at,
             updated_at=conversation.updated_at,
         )    
-conversation_service = ConversationService()    
+conversation_service = ConversationService()
