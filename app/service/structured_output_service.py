@@ -9,7 +9,8 @@ from app.llm.schemas import LLMRequest
 from app.service.prompt_service import prompt_service
 from app.structured_outputs.parser import StructuredOutputParseError, parse_structured_output
 from app.structured_outputs.response_format import build_json_object_response_format
-from app.structured_outputs.schemas import IntentClassificationOutput, RAGStructuredAnswerOutput
+from app.structured_outputs.retry import parse_or_repair_structured_output
+from app.structured_outputs.schemas import AgentPlanOutput, IntentClassificationOutput, RAGStructuredAnswerOutput
 
 logger = get_logger(__name__)
 class StructuredOutputService:
@@ -70,7 +71,37 @@ class StructuredOutputService:
             task_name="rag_structured_answer",
         )
 
+    async def plan_agent_task(
+        self,
+        user_goal: str,
+        available_tools: str,
+        constraints: str,
+        model: str,
+        llm_provider: BaseLLMProvider,
+    ) -> AgentPlanOutput:
+        messages = prompt_service.render_by_prompt_id(
+            prompt_id="agent_plan_structured",
+            variables={
+                "user_goal": user_goal,
+                "available_tools": available_tools,
+                "constraints": constraints,
+            },
+        )
 
+        request = LLMRequest(
+            model=model,
+            messages=messages,
+            temperature=0.1,
+            stream=False,
+            response_format=build_json_object_response_format(),
+        )
+
+        return await self._call_and_parse(
+            request=request,
+            llm_provider=llm_provider,
+            schema=AgentPlanOutput,
+            task_name="agent_plan",
+        )
 
     async def _call_and_parse(
         self,
@@ -85,6 +116,7 @@ class StructuredOutputService:
         )
 
         try:
+
             response = await llm_provider.chat(request)
 
         except LLMProviderError as exc:
@@ -104,9 +136,11 @@ class StructuredOutputService:
                 },
             ) from exc
         try:
-            result = parse_structured_output(
+            result = parse_or_repair_structured_output(
                 raw_text=response.content,
                 schema=schema,
+                model=request.model,
+                llm_provider=llm_provider,
             )
 
         except StructuredOutputParseError as exc:
@@ -132,3 +166,4 @@ class StructuredOutputService:
 
         return result
     
+structured_output_service = StructuredOutputService()

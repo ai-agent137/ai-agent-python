@@ -9,6 +9,7 @@ from app.api.v1.agents import router as agent_router
 from app.core.constants import ApiTag
 from app.dependencies.auth import verify_api_key
 from app.api.v1.prompts import router as prompts_router
+from app.api.v1.structured_outputs import router as structured_outputs_router
 
 
 api_router = APIRouter()
@@ -21,3 +22,7 @@ api_router.include_router(conversations_router, tags=[ApiTag.CONVERSATIONS],depe
 api_router.include_router(rag_router, tags=[ApiTag.RAG],dependencies=[Depends(verify_api_key)])
 api_router.include_router(agent_router, tags=[ApiTag.AGENTS],dependencies=[Depends(verify_api_key)])
 api_router.include_router(prompts_router, tags=["Prompts"])
+api_router.include_router(
+    structured_outputs_router,
+    tags=["Structured Outputs"],
+)

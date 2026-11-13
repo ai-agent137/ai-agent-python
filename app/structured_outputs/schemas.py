@@ -111,3 +111,5 @@ class ResumeOptimizationOutput(BaseModel):
         ...,
         description="改写后的简历内容",
     )
+
+    
