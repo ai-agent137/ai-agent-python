@@ -13,12 +13,15 @@ from app.llm.errors import (
 )
 from app.llm.http_client import create_llm_http_client
 from app.llm.schemas import (
+    LLMMessage,
     LLMProviderName,
     LLMRequest,
     LLMResponse,
+    LLMRole,
     LLMStreamChunk,
     LLMUsage,
 )
+from app.llm.schemas import LLMMessage, LLMRole, LLMToolCall
 
 logger = get_logger(__name__)
 
@@ -205,6 +208,10 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             payload["max_tokens"] = request.max_tokens
         if request.response_format is not None:
             payload["response_format"] = request.response_format
+        if request.tools:
+            payload["tools"] = request.tools
+        if request.tool_choice:
+            payload["tool_choice"] = request.tool_choice         
 
         return payload
     def _parse_chat_response(self, data: dict) -> LLMResponse:
@@ -218,6 +225,20 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             completion_tokens=usage_data.get("completion_tokens", 0),
             total_tokens=usage_data.get("total_tokens", 0),
         )
+        # 工具调用
+#         {
+#           "tool_calls": [
+#             {
+#               "id": "call_xxx",
+#               "type": "function",
+#               "function": {
+#                 "name": "query_order",
+#                 "arguments": "{\"order_id\":\"10001\"}"
+#               }
+#             }
+#           ]
+#         }
+        tool_calls = self._parse_tool_calls(message)
 
         return LLMResponse(
             provider=self.provider_name,
@@ -225,7 +246,44 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             content=message.get("content", ""),
             usage=usage,
             raw_response=data,
+            tool_calls=tool_calls
         )
+    def _parse_tool_calls(self, message: dict) -> list[LLMToolCall]:
+        raw_tool_calls = message.get("tool_calls") or []
+        parsed_tool_calls: list[LLMToolCall] = []
+
+        for item in raw_tool_calls:
+            function = item.get("function") or {}
+            raw_arguments = function.get("arguments") or "{}"
+
+            try:
+                arguments = json.loads(raw_arguments)
+            except json.JSONDecodeError:
+                arguments = {}
+
+            parsed_tool_calls.append(
+                LLMToolCall(
+                    id=item.get("id", ""),
+                    name=function.get("name", ""),
+                    arguments=arguments,
+                    raw_arguments=raw_arguments,
+                )
+            )
+
+        return parsed_tool_calls
+    
+    
+    def _build_message_payload(self, message: LLMMessage) -> dict:
+        payload = {
+            "role": message.role.value,
+            "content": message.content,
+        }
+
+        if message.role == LLMRole.TOOL and message.tool_call_id:
+            payload["tool_call_id"] = message.tool_call_id
+
+        return payload
+    
     def _parse_stream_chunk(self, data: dict) -> LLMStreamChunk:
         
         choice = data["choices"][0] if data["choices"] else {}

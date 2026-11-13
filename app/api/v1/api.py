@@ -10,7 +10,7 @@ from app.core.constants import ApiTag
 from app.dependencies.auth import verify_api_key
 from app.api.v1.prompts import router as prompts_router
 from app.api.v1.structured_outputs import router as structured_outputs_router
-
+from app.api.v1.tool_calling import router as tool_calling_router
 
 api_router = APIRouter()
 
@@ -25,4 +25,8 @@ api_router.include_router(prompts_router, tags=["Prompts"])
 api_router.include_router(
     structured_outputs_router,
     tags=["Structured Outputs"],
+)
+api_router.include_router(
+    tool_calling_router,
+    tags=["Tool Calling"],
 )

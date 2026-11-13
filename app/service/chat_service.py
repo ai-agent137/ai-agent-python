@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.conversation_repository import conversation_repository
 from app.prompts.base import PromptScenario
 from app.service.prompt_service import prompt_service
+from app.service.tool_calling_service import ToolCallingService
 
 
 logger = get_logger(__name__)
@@ -62,6 +63,26 @@ async def chat_with_ai(
     llm_request = build_llm_request_from_chat_request(request) # 请求
 
     # 调用大模型
+    # 电商意图
+    if request.prompt_scenario == "ecommerce_customer_service":
+        tool_result = await ToolCallingService.run_with_tools(
+            user_question=latest_user_message,
+            model=model,
+            llm_provider=llm_provider,
+        )
+
+        answer = tool_result["answer"]
+
+        return ChatResponse(
+            answer=answer,
+            model=model,
+            session_id=request.session_id or f"s_{uuid.uuid4().hex[:8]}",
+            message_id=f"m_{uuid.uuid4().hex[:8]}",
+            usage=TokenUsage(),
+            sources=[],
+            trace_id=f"trace_{uuid.uuid4().hex[:8]}",
+        )
+    # 正常调用
     try:
         llm_response = await llm_provider.chat(llm_request)
     except LLMProviderError as exc:
