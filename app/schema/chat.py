@@ -58,6 +58,7 @@ class ChatResponse(BaseModel):
     usage: TokenUsage = Field(default_factory=TokenUsage, description="Token 用量")
     sources: list[SourceDocument] = Field(default_factory=list, description="引用来源")
     trace_id: str | None = Field(default=None, description="链路追踪 ID") 
+    metadata: dict[str, Any] = Field(default_factory=dict, description="扩展元数据")
 
 
 

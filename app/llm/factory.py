@@ -8,7 +8,6 @@ class LLMProviderFactory:
     @staticmethod
     def create(provider: LLMProviderName | str | None = None) -> BaseLLMProvider:
         provider_name = provider or infer_provider_from_model(settings.default_model)
-
         if isinstance(provider_name, str):
             provider_name = LLMProviderName(provider_name)
 

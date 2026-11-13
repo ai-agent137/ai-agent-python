@@ -66,6 +66,7 @@ async def chat_with_ai(
                 message_id=f"m_{uuid.uuid4().hex[:8]}",
                 usage=TokenUsage(),
                 sources=[],
+                metadata={"cache_hit": True},
                 trace_id=f"trace_{uuid.uuid4().hex[:8]}",
             )
     llm_provider = llm_provider or LLMProviderFactory.create() # 大模型
