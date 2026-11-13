@@ -6,27 +6,56 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.message import Message
 import uuid
 class ConversationRespository:
-    async def create(
+    async def create_conversation(
             self, 
             db: AsyncSession,
-            request: ConversationCreateRequest,
+            title: str,
             user_id: str | None = None
-    ) -> dict:
+    ) -> Conversation:
         
         conversation = Conversation(
-            id = f"c_{uuid.uuid4().hex[:8]}",
-            title=request.title,
+            id=f"c_{uuid.uuid4().hex[:8]}",
+            title=title,
             user_id=user_id,
+            status="active"
         )
         db.add(conversation)
         await db.commit()
-        await db.refresh(conversation)
+        await db.refresh()
         return conversation
+    async def list_conversations(
+        self,
+        db: AsyncSession,
+        user_id: str | None = None,
+        limit: int = 20,
+    ) -> list[Conversation]:
+        stmt = (
+            select(Conversation)
+                .where(Conversation.status)
+                .order_by(Conversation.updated_at.desc())
+                .limit(limit)
+        )
+        if user_id:
+            stmt.where(Conversation.user_id ==user_id)
+        result = await db.execute(stmt)  
+        db.refresh()
+        return list(result.scalars().all())  
+    
+    async def get_message(
+        self,
+        db: AsyncSession,
+        conversation_id: str
+    ) -> Conversation | None:
+        stmt = select(Conversation).where(Conversation.id == conversation_id, Conversation.status=="active")
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
     
     async def get_messages(
         self,
         db: AsyncSession,
         conversation_id: str,
+        limit:int = 50
     ) -> list[ChatMessage]:
         stmt = (
             select(Message)
@@ -35,15 +64,8 @@ class ConversationRespository:
         )
 
         result = await db.execute(stmt)
-        messages = result.scalars().all()
 
-        return [
-            ChatMessage(
-                role=MessageRole(message.role),
-                content=message.content,
-            )
-            for message in messages
-        ]
+        return list(result.scalar().all())
     
     async def add_message(
         self,
