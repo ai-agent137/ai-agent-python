@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     debug: bool = Field(default=True)
     
     # 模型相关
+    model: str = Field(default="deepseek-v4.1-flash-1017")
+    
     default_model: str = Field(default="deepseek-chat")
     supported_models: str = Field(default="deepseek-chat,qwen-plus,gpt-4o-mini")
     openai_api_key: str = Field(default="")
