@@ -11,6 +11,9 @@ from app.dependencies.auth import verify_api_key
 from app.api.v1.prompts import router as prompts_router
 from app.api.v1.structured_outputs import router as structured_outputs_router
 from app.api.v1.tool_calling import router as tool_calling_router
+from app.api.v1.langchain_structured_outputs import (
+    router as langchain_structured_outputs_router,
+)
 
 api_router = APIRouter()
 
@@ -29,4 +32,9 @@ api_router.include_router(
 api_router.include_router(
     tool_calling_router,
     tags=["Tool Calling"],
+)
+
+api_router.include_router(
+    langchain_structured_outputs_router,
+    tags=["LangChain Structured Outputs"],
 )
