@@ -14,6 +14,7 @@ from app.api.v1.tool_calling import router as tool_calling_router
 from app.api.v1.langchain_structured_outputs import (
     router as langchain_structured_outputs_router,
 )
+from app.api.v1.langchain_tools import router as langchain_tools_router
 
 api_router = APIRouter()
 
@@ -37,4 +38,9 @@ api_router.include_router(
 api_router.include_router(
     langchain_structured_outputs_router,
     tags=["LangChain Structured Outputs"],
+)
+
+api_router.include_router(
+    langchain_tools_router,
+    tags=["LangChain Tools"],
 )
