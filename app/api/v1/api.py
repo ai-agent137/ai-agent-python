@@ -15,6 +15,7 @@ from app.api.v1.langchain_structured_outputs import (
     router as langchain_structured_outputs_router,
 )
 from app.api.v1.langchain_tools import router as langchain_tools_router
+from app.api.v1.langchain_agents import router as langchain_agents_router
 
 api_router = APIRouter()
 
@@ -43,4 +44,8 @@ api_router.include_router(
 api_router.include_router(
     langchain_tools_router,
     tags=["LangChain Tools"],
+)
+api_router.include_router(
+    langchain_agents_router,
+    tags=["LangChain Agents"],
 )
