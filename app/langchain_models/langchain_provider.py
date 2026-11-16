@@ -6,6 +6,7 @@ from typing import AsyncGenerator
 from app.langchain_models.message_adapter import to_langchain_message, to_langchain_messages, to_llm_response
 from app.langchain_models.model_factory import LangChainModelFactory
 from app.llm.base import BaseLLMProvider
+from app.llm.errors import LLMProviderError
 from app.llm.schemas import LLMProviderName, LLMRequest, LLMResponse, LLMStreamChunk, LLMUsage
 from langchain.messages import AIMessageChunk
 
@@ -16,7 +17,7 @@ class LangChainLLMProvider(BaseLLMProvider):
         provider: str = "qwen",
         model: str = "deepseek-v4.1-flash-1017"
     ):
-        self.provider = provider,
+        self.provider = provider
         self.model = model
 
     @property
@@ -41,7 +42,16 @@ class LangChainLLMProvider(BaseLLMProvider):
         messages = to_langchain_messages(request.messages)
         if request.tools:
             model = model.bind_tools(request.tools)
-        ai_message = await model.ainvoke(messages)
+        try:
+            ai_message = await model.ainvoke(messages)
+        except Exception as exc:
+            raise LLMProviderError(
+                message="LangChain 模型调用失败",
+                provider=self.provider,
+                status_code=None,
+                raw_error=repr(exc),
+            )
+       
         return to_llm_response(
             ai_message=ai_message,
             provider=self.provider,
