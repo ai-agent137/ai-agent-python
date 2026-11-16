@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     debug: bool = Field(default=True)
     
     # 模型相关
+    default_llm_provider: str = Field(default="langchain_qwen")
     model: str = Field(default="deepseek-v4.1-flash-1017")
     
     default_model: str = Field(default="deepseek-chat")
@@ -35,6 +36,7 @@ class Settings(BaseSettings):
     redis_default_ttl_seconds: int = Field(default=300)
     rate_limit_window_seconds: int = Field(default=60)
     rate_limit_max_requests: int = Field(default=20)
+
 
     model_config = SettingsConfigDict(
         env_file=".env",

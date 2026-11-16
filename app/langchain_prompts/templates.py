@@ -1,8 +1,8 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
-GENERAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(
-    [
+GENERAL_CHAT_PROMPT = ChatPromptTemplate(
+    messages=[
         (
             "system",
             (
@@ -38,8 +38,8 @@ GENERAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-ECOMMERCE_CUSTOMER_SERVICE_PROMPT = ChatPromptTemplate.from_messages(
-    [
+ECOMMERCE_CUSTOMER_SERVICE_PROMPT = ChatPromptTemplate(
+    messages=[
         (
             "system",
             (
@@ -81,8 +81,8 @@ ECOMMERCE_CUSTOMER_SERVICE_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-RAG_QA_PROMPT = ChatPromptTemplate.from_messages(
-    [
+RAG_QA_PROMPT = ChatPromptTemplate(
+    messages=[
         (
             "system",
             (
@@ -121,8 +121,8 @@ RAG_QA_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-AGENT_PLANNER_PROMPT = ChatPromptTemplate.from_messages(
-    [
+AGENT_PLANNER_PROMPT = ChatPromptTemplate(
+    messages=[
         (
             "system",
             (
