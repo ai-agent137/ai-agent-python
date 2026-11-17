@@ -23,8 +23,7 @@ from app.prompts.base import PromptScenario
 from app.service import tool_calling_service
 from app.service.prompt_service import prompt_service
 from app.service.tool_calling_service import tool_calling_service
-from app.langchain_rag.service import langchain_rag_service
-
+from app.langchain_agent_rag.service import langchain_agent_rag_service
 
 logger = get_logger(__name__)
 
@@ -44,46 +43,43 @@ async def chat_with_ai(
     )
     # 电商意图调用
     if should_use_tool_calling(request):
-        return await chat_with_tools(
-            request=request,
-            latest_user_message=latest_user_message,
-            model=model,
-            llm_provider=llm_provider,
-        )
-     # rag
-    if request.prompt_scenario == "rag_qa":
-        rag_result = langchain_rag_service.ask(
-            question=latest_user_message,
-            provider="deepseek",
-            model_name=model,
-            k=4,
-        )
+        agent_rag_result = await langchain_agent_rag_service.run_ecommerce_agent_rag(
+        user_question=latest_user_message,
+        provider="deepseek",
+        model_name=model,
+    )
 
-        return ChatResponse(
-            answer=rag_result.answer,
-            model=model,
-            session_id=request.session_id,
-            message_id=f"m_{uuid.uuid4().hex[:8]}",
-            usage=TokenUsage(),
-            sources=[
-                SourceDocument(
-                    document_id=source.document_id or "",
-                    title=source.source or "",
-                    content=source.content_preview,
-                    score=0,
-                    metadata={
-                        "chunk_id": source.chunk_id,
-                        "source": source.source,
-                    },
-                )
-                for source in rag_result.sources
+    return ChatResponse(
+        answer=agent_rag_result.answer,
+        model=model,
+        session_id=request.session_id,
+        message_id=f"m_{uuid.uuid4().hex[:8]}",
+        usage=TokenUsage(),
+        sources=[
+            SourceDocument(
+                document_id=source.document_id or "",
+                title=source.source or "",
+                content=source.content_preview,
+                score=0,
+                metadata={
+                    "chunk_id": source.chunk_id,
+                    "source": source.source,
+                },
+            )
+            for source in agent_rag_result.sources
+        ],
+        trace_id=f"trace_{uuid.uuid4().hex[:8]}",
+        metadata={
+            "agent_rag": True,
+            "used_tools": agent_rag_result.used_tools,
+            "used_rag": agent_rag_result.used_rag,
+            "tool_calls": agent_rag_result.tool_calls,
+            "agent_messages": [
+                item.model_dump()
+                for item in agent_rag_result.messages
             ],
-            trace_id=f"trace_{uuid.uuid4().hex[:8]}",
-            metadata={
-                "rag": True,
-                "source_count": len(rag_result.sources),
-            },
-        )
+        },
+    )
 
     # 缓存
     if redis:

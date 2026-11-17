@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # 模型相关
     default_llm_provider: str = Field(default="langchain_qwen")
     model: str = Field(default="deepseek-v4.1-flash-1017")
-    
+    model_platform: str = Field(default="qwen")
     default_model: str = Field(default="deepseek-chat")
     supported_models: str = Field(default="deepseek-chat,qwen-plus,gpt-4o-mini")
     openai_api_key: str = Field(default="")
