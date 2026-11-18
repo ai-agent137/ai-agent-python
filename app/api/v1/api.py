@@ -18,6 +18,7 @@ from app.api.v1.langchain_tools import router as langchain_tools_router
 from app.api.v1.langchain_agents import router as langchain_agents_router
 from app.api.v1.langchain_rag import router as langchain_rag_router
 from app.api.v1.langchain_agent_rag import router as langchain_agent_rag_router
+from app.api.v1.langgraph_persistence import router as langgraph_persistence_router
 api_router = APIRouter()
 
 api_router.include_router(health_router, tags=[ApiTag.HEALTH])
@@ -57,4 +58,9 @@ api_router.include_router(
 api_router.include_router(
     langchain_agent_rag_router,
     tags=["LangChain Agent RAG"],
+)
+
+api_router.include_router(
+    langgraph_persistence_router,
+    tags=["LangGraph Persistence"],
 )
